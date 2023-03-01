@@ -16,6 +16,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform SoruPaneli;
     [SerializeField] private TextMeshProUGUI soruTexti;
     [SerializeField] private Sprite[] kareSpirtes;
+    [SerializeField] private GameObject sonuçPaneli;
+    [SerializeField] private AudioSource audioSource;
     private int bölünensayı, bölensayı, kacıncıSoru, buttondegeri, dogru_sonuc, kalan_hak;
     private string sorununZorlukDerecesi;
     private bool butona_basıldımı = false;
@@ -23,12 +25,15 @@ public class GameManager : MonoBehaviour
     private GameObject gecerliKare;
     private kalanCanlar Kalan_Canlar;
     private PuanManager _puanManager;
+    public AudioClip butonSesi;
 
     List<int> bolumDegerlerilistesi = new List<int>();
 
     private void Awake()
     {
         kalan_hak = 3;
+        audioSource = GetComponent<AudioSource>();
+        sonuçPaneli.GetComponent<RectTransform>().localScale = Vector3.zero;
         Kalan_Canlar = Object.FindObjectOfType<kalanCanlar>();
         _puanManager = Object.FindObjectOfType<PuanManager>();
         Kalan_Canlar.Kalan_Hakları_Kontrol_et(kalan_hak);
@@ -60,6 +65,7 @@ public class GameManager : MonoBehaviour
     {
         if (butona_basıldımı)
         {
+            audioSource.PlayOneShot(butonSesi);
             buttondegeri = int.Parse(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.transform
                 .GetChild(0).GetComponent<TextMeshProUGUI>().text);
             gecerliKare = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject;
@@ -76,13 +82,31 @@ public class GameManager : MonoBehaviour
             gecerliKare.transform.GetComponent<Button>().interactable = false;
             _puanManager.PuaniArtir(sorununZorlukDerecesi);
             bolumDegerlerilistesi.RemoveAt(kacıncıSoru);
-            SoruPaneliniAç();
+            if (bolumDegerlerilistesi.Count > 0)
+            {
+                SoruPaneliniAç();
+            }
+            else
+            {
+                OyunBitti();
+            }
         }
         else
         {
             kalan_hak--;
             Kalan_Canlar.Kalan_Hakları_Kontrol_et(kalan_hak);
         }
+
+        if (kalan_hak <= 0)
+        {
+            OyunBitti();
+        }
+    }
+
+    void OyunBitti()
+    {
+        butona_basıldımı = false;
+        sonuçPaneli.GetComponent<RectTransform>().DOScale(1, 0.3f).SetEase(Ease.OutBack);
     }
     IEnumerator DoFadeRoutine()
     {
